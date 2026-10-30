@@ -1,0 +1,19 @@
+# OPTIONAL — Only apply if you need external access via AWS ALB.
+# WARNING: This will create an AWS Load Balancer and may incur charges.
+# Do NOT apply automatically. Review AWS pricing before creating.
+#
+# Apply with: kubectl apply -f k8s/07-loadbalancer-optional.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: parksmart-frontend-lb
+  namespace: parksmart
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  selector:
+    app: parksmart-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+  type: LoadBalancer

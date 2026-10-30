@@ -1,0 +1,82 @@
+# REPLACE IMAGE URI: Replace <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/parksmart-backend:latest
+# with your actual ECR image URI from scripts/push-to-ecr.ps1 output
+#
+# NOTE: SQLite is only suitable for single-replica local demo.
+# For production with multiple replicas, set DATABASE_URL to Amazon RDS PostgreSQL.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: parksmart-backend
+  namespace: parksmart
+  labels:
+    app: parksmart-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: parksmart-backend
+  template:
+    metadata:
+      labels:
+        app: parksmart-backend
+    spec:
+      containers:
+        - name: backend
+          image: <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/parksmart-backend:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: FLASK_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: parksmart-config
+                  key: FLASK_ENV
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: parksmart-config
+                  key: REDIS_URL
+            - name: DATABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: parksmart-config
+                  key: DATABASE_URL
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: parksmart-secrets
+                  key: SECRET_KEY
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/ready
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: parksmart-backend
+  namespace: parksmart
+spec:
+  selector:
+    app: parksmart-backend
+  ports:
+    - port: 5000
+      targetPort: 5000
+  type: ClusterIP

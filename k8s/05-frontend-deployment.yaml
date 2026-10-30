@@ -1,0 +1,55 @@
+# REPLACE IMAGE URI: Replace <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/parksmart-frontend:latest
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: parksmart-frontend
+  namespace: parksmart
+  labels:
+    app: parksmart-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: parksmart-frontend
+  template:
+    metadata:
+      labels:
+        app: parksmart-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/parksmart-frontend:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: parksmart-frontend
+  namespace: parksmart
+spec:
+  selector:
+    app: parksmart-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+  type: ClusterIP
